@@ -28,7 +28,7 @@
 		<dependency>
 			<groupId>com.github.forleven</groupId>
 			<artifactId>common</artifactId>
-			<version>65acfc8693</version>
+			<version>2018.09.x-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
