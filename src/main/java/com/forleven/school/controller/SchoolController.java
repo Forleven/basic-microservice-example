@@ -6,7 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import io.swagger.annotations.*;
 
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,9 +53,10 @@ public class SchoolController {
 
         return schoolService.getSchools(pageable)
                 .map(Lambda::toResponse)
-                .orElseThrow(() -> new NotFoundException("School.not_founded"));
+                .orElseThrow(() -> new NotFoundException("school.not_founded"));
     }
 
+    @HystrixCommand(fallbackMethod = "fallbackGetSchool")
     @GetMapping("/{schoolId}")
     @ApiOperation(value = "View a School", response = School.class)
     @ApiResponses({
@@ -67,7 +71,7 @@ public class SchoolController {
 
         return schoolService.getSchool(schoolId)
                 .map(Lambda::toResponse)
-                .orElseThrow(() -> new NotFoundException("School.not_founded"));
+                .orElseThrow(() -> new NotFoundException("school.not_founded"));
     }
 
     @PostMapping
@@ -87,7 +91,7 @@ public class SchoolController {
 
         if (bindingResult.hasErrors()) {
             log.error("Error in binding results");
-            return ResponseEntity.badRequest().body(formErrors.beanValidation(bindingResult));
+            return formErrors.validationsToResponse(bindingResult);
         }
 
         return schoolService.saveSchool(schoolForm).fold(
@@ -115,7 +119,7 @@ public class SchoolController {
 
         if (bindingResult.hasErrors()) {
             log.error("Error in binding results");
-            return ResponseEntity.badRequest().body(formErrors.beanValidation(bindingResult));
+            return formErrors.validationsToResponse(bindingResult);
         }
 
         School school = School.builder()
@@ -145,5 +149,17 @@ public class SchoolController {
         return schoolService.deleteSchool(schoolId)
                 .map(Lambda::errorToResponse)
                 .orElseGet(Lambda.TO_ACCEPTED);
+    }
+
+    // FALLBACK METHODS
+
+    public ResponseEntity fallbackGetSchool(Long schoolId) {
+
+        // publish in spring events to migrate this school in legacy to this service
+        // or
+        // call a service to get school any place and save in this service
+
+        // after do process retry
+        return getSchool(schoolId);
     }
 }
