@@ -62,6 +62,7 @@ public class SchoolServiceTests {
                 expectedSchool,
                 schoolNullable.get()
         );
+
     }
 
     @Test
